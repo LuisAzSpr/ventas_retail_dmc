@@ -1,136 +1,114 @@
-# Proyecto Final Integrador — Pipeline de Ventas Retail
+# Proyecto final - Pipeline de ventas retail
 
-Pipeline de datos **end-to-end** sobre Databricks: ingesta incremental de 4 entidades de ventas retail, arquitectura **medallion** (Bronze → Silver → Gold), modelo **estrella** en Gold, calidad de datos con **expectations**, orquestación con **Job** y empaquetado como **Databricks Asset Bundle (DAB)**.
+Pipeline de datos en Databricks que toma 4 entidades de un negocio de ventas retail, las procesa por capas (Bronze, Silver y Gold) y termina en un modelo estrella que alimenta un dashboard.
 
-Todo el pipeline está construido con **Spark Declarative Pipelines** (Lakeflow / ex Delta Live Tables) en **Python**, usando `STREAM` para la ingesta incremental.
+Está hecho con Spark Declarative Pipelines (Lakeflow / Delta Live Tables) en Python. Usa STREAM para leer los datos de forma incremental, aplica reglas de calidad (expectations) en Silver y Gold, se orquesta con un Job y se despliega como Databricks Asset Bundle.
 
-## Arquitectura
+## Cómo funciona
 
-```
-Archivos CSV/JSON (Volume)
-        │  STREAM (Auto Loader, incremental)
-        ▼
-🥉 BRONZE  (STREAMING TABLE)   ingesta cruda + metadata de ingesta
-        │  STREAM
-        ▼
-🥈 SILVER  (STREAMING TABLE)   limpieza, tipado, dedup + expectations
-        │  batch
-        ▼
-🥇 GOLD    (MATERIALIZED VIEW) modelo estrella + expectations
-        │
-        ▼
-📊 Dashboard de Databricks (≥4 visualizaciones)
-```
+Los archivos CSV y JSON se dejan en un Volume. Desde ahí el pipeline los procesa así:
 
-Orquestado por un **Job** (`setup` → `pipeline`) y desplegado con `databricks bundle deploy`.
+- Bronze: los lee tal cual con STREAM, sin transformar. Son streaming tables.
+- Silver: limpia, convierte tipos, quita duplicados y valida con expectations. También son streaming tables.
+- Gold: arma el modelo estrella (dimensiones y tabla de hechos) como materialized views.
 
-## Estructura del repositorio
+El dashboard se construye sobre las tablas de Gold. Un Job dispara todo el proceso.
+
+## Estructura
 
 ```
-.
-├── databricks.yml              # Definición del Asset Bundle
-├── resources/
-│   ├── pipeline.yml            # Declarative Pipeline
-│   └── job.yml                 # Job orquestador (setup + pipeline)
-├── src/
-│   ├── 00_setup.py             # Crea catálogo, esquemas y volume
-│   └── transformations/
-│       ├── 01_bronze.py        # Ingesta cruda (STREAMING TABLE)
-│       ├── 02_silver.py        # Limpieza + expectations (STREAMING TABLE)
-│       └── 03_gold.py          # Modelo estrella + expectations (MATERIALIZED VIEW)
-├── dashboard/
-│   └── dashboard_gold.lvdash.json   # Dashboard exportado (capa Gold)
-└── data/                       # 12 archivos fuente (4 entidades x 3 batches)
+databricks.yml            Configuracion del bundle
+resources/
+  pipeline.yml            El pipeline
+  job.yml                 El job que lo ejecuta
+src/
+  00_setup.py             Crea el catalogo, los esquemas y el volume
+  transformations/
+    01_bronze.py
+    02_silver.py
+    03_gold.py
+dashboard/
+  dashboard_gold.lvdash.json
+data/                     Los 12 archivos fuente (4 entidades, 3 lotes cada una)
 ```
 
-## Catálogo, esquema y tabla por capa
+## Catalogo y tablas
 
-| Capa | Catálogo | Esquema | Tablas | Tipo |
-|------|----------|---------|--------|------|
-| Landing | proyecto_final | landing | volume `raw_data` | Volume |
-| Bronze | proyecto_final | bronze | `clientes_raw`, `productos_raw`, `pedidos_raw`, `detalle_pedidos_raw` | Streaming table |
-| Silver | proyecto_final | silver | `clientes`, `productos`, `pedidos`, `detalle_pedidos` | Streaming table |
-| Gold | proyecto_final | gold | `dim_cliente`, `dim_producto`, `dim_fecha`, `fact_ventas` | Materialized view |
+Todo vive en el catalogo `proyecto_final`, con un esquema por capa.
 
-**Ruta del Volume:** `/Volumes/proyecto_final/landing/raw_data/ventas_retail_luisazana/{entidad}/`
+| Capa | Esquema | Tablas |
+|------|---------|--------|
+| Landing | landing | volume raw_data |
+| Bronze | bronze | clientes_raw, productos_raw, pedidos_raw, detalle_pedidos_raw |
+| Silver | silver | clientes, productos, pedidos, detalle_pedidos |
+| Gold | gold | dim_cliente, dim_producto, dim_fecha, fact_ventas |
 
-## Modelo estrella (Gold)
+Los archivos se suben a: `/Volumes/proyecto_final/landing/raw_data/ventas_retail_luisazana/{entidad}/`
 
-```
-              dim_cliente
-                   │
-dim_producto ─ fact_ventas ─ dim_fecha
-```
+## Modelo estrella
 
-`fact_ventas` (grano: 1 fila por línea de detalle de pedido) — FKs `customer_key`, `product_key`, `date_key` + métricas `cantidad`, `precio_unitario`, `descuento`, `monto_total` (= cantidad × precio_unitario × (1 − descuento)).
+`fact_ventas` es la tabla de hechos, con una fila por cada linea de detalle de un pedido. Se une a tres dimensiones: `dim_cliente`, `dim_producto` y `dim_fecha`.
+
+Guarda las llaves `customer_key`, `product_key` y `date_key`, y las metricas `cantidad`, `precio_unitario`, `descuento` y `monto_total` (cantidad por precio unitario, restando el descuento).
 
 ## Diccionario de datos
 
-> Nota: además de los campos de negocio, cada archivo fuente incluye una columna `audit_timestamp` (marca de auditoría/ingesta). En Bronze se agregan también `_fecha_ingesta` y `_archivo_origen`.
+Ademas de los campos de negocio, cada archivo trae una columna `audit_timestamp` con la fecha y hora del lote.
 
 ### clientes (CSV)
-| Campo | Tipo | Descripción |
+
+| Campo | Tipo | Descripcion |
 |-------|------|-------------|
-| customer_id | Integer | Identificador único del cliente (PK) |
-| nombre | String | Nombre del cliente |
-| apellido | String | Apellido del cliente |
-| email | String | Correo electrónico de contacto |
-| ciudad | String | Ciudad de residencia |
-| pais | String | País de residencia |
-| fecha_registro | Date | Fecha de alta (yyyy-MM-dd) |
-| segmento | String | Segmento comercial: Retail / Premium |
-| audit_timestamp | Timestamp | Marca de auditoría del batch |
+| customer_id | Integer | Identificador del cliente (clave primaria) |
+| nombre | String | Nombre |
+| apellido | String | Apellido |
+| email | String | Correo |
+| ciudad | String | Ciudad |
+| pais | String | Pais |
+| fecha_registro | Date | Fecha de alta |
+| segmento | String | Retail o Premium |
 
 ### productos (CSV)
-| Campo | Tipo | Descripción |
+
+| Campo | Tipo | Descripcion |
 |-------|------|-------------|
-| product_id | Integer | Identificador único del producto (PK) |
-| nombre_producto | String | Nombre comercial |
-| categoria | String | Categoría |
-| subcategoria | String | Subcategoría |
-| precio_unitario | Decimal | Precio unitario de lista |
+| product_id | Integer | Identificador del producto (clave primaria) |
+| nombre_producto | String | Nombre |
+| categoria | String | Categoria |
+| subcategoria | String | Subcategoria |
+| precio_unitario | Decimal | Precio de lista |
 | proveedor | String | Proveedor |
-| stock_actual | Integer | Unidades en inventario |
-| audit_timestamp | Timestamp | Marca de auditoría del batch |
+| stock_actual | Integer | Unidades en stock |
 
 ### pedidos (JSON)
-| Campo | Tipo | Descripción |
+
+| Campo | Tipo | Descripcion |
 |-------|------|-------------|
-| order_id | Integer | Identificador único del pedido (PK) |
-| customer_id | Integer | FK → clientes.customer_id |
+| order_id | Integer | Identificador del pedido (clave primaria) |
+| customer_id | Integer | Cliente que hizo el pedido |
 | fecha_pedido | Date | Fecha del pedido |
-| canal_venta | String | Canal: web / app_movil / tienda_fisica |
-| estado_pedido | String | completado / en_proceso / cancelado |
-| total_pedido | Decimal | Monto total del pedido |
-| audit_timestamp | Timestamp | Marca de auditoría del batch |
+| canal_venta | String | web, app_movil o tienda_fisica |
+| estado_pedido | String | completado, en_proceso o cancelado |
+| total_pedido | Decimal | Monto total |
 
 ### detalle_pedidos (JSON)
-| Campo | Tipo | Descripción |
+
+| Campo | Tipo | Descripcion |
 |-------|------|-------------|
-| order_item_id | Integer | Identificador único de la línea (PK) |
-| order_id | Integer | FK → pedidos.order_id |
-| product_id | Integer | FK → productos.product_id |
-| cantidad | Integer | Unidades compradas |
-| precio_unitario | Decimal | Precio unitario aplicado |
-| descuento | Decimal | Descuento aplicado (0 a 1) |
-| audit_timestamp | Timestamp | Marca de auditoría del batch |
+| order_item_id | Integer | Identificador de la linea (clave primaria) |
+| order_id | Integer | Pedido al que pertenece |
+| product_id | Integer | Producto comprado |
+| cantidad | Integer | Unidades |
+| precio_unitario | Decimal | Precio aplicado |
+| descuento | Decimal | Descuento aplicado (de 0 a 1) |
 
-## Calidad de datos (expectations)
+## Calidad de datos
 
-Se aplican en Silver (validez de formato) y en Gold (integridad del modelo), usando las 3 severidades: `warn` (`@dlt.expect`), `drop` (`@dlt.expect_or_drop`) y `fail` (`@dlt.expect_or_fail`).
+Hay reglas (expectations) en Silver y en Gold, con las tres severidades: warn (solo avisa), drop (descarta la fila) y fail (detiene la ejecucion). En Silver revisan formato y valores validos; en Gold revisan que las llaves y los montos del modelo sean correctos.
 
-## Despliegue
+## Como desplegarlo
 
-```bash
-# 1. Autenticarse contra el workspace
-databricks auth login --host https://<tu-workspace>
-
-# 2. Validar y desplegar el bundle
-databricks bundle validate -t dev
-databricks bundle deploy -t dev
-
-# 3. Ejecutar el job (setup + pipeline)
-databricks bundle run job_ventas_retail -t dev
-```
-
-Antes de correr el pipeline, subir los 12 archivos de `data/` al Volume, respetando la estructura `/{entidad}/`.
+1. Iniciar sesion: `databricks auth login --host <workspace>`
+2. Subir los archivos de `data/` al volume, cada entidad en su carpeta.
+3. Desplegar: `databricks bundle deploy -t dev`
+4. Ejecutar: `databricks bundle run job_ventas_retail -t dev`
