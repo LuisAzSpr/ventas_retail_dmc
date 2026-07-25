@@ -1,0 +1,14 @@
+resources:
+  jobs:
+    job_ventas_retail:
+      name: job_ventas_retail
+      tasks:
+        - task_key: setup
+          notebook_task:
+            notebook_path: ../src/00_setup.py
+
+        - task_key: pipeline_medallion
+          depends_on:
+            - task_key: setup
+          pipeline_task:
+            pipeline_id: ${resources.pipelines.pipeline_ventas_retail.id}

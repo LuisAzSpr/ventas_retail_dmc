@@ -1,0 +1,12 @@
+resources:
+  pipelines:
+    pipeline_ventas_retail:
+      name: pipeline_ventas_retail
+      catalog: proyecto_final
+      schema: bronze
+      serverless: true
+      photon: true
+      channel: CURRENT
+      libraries:
+        - glob:
+            include: ../src/transformations/**

@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Proyecto Final Integrador · Databricks</title>
+<style>
+  :root{
+    --bg:#0f1419;
+    --bg-card:#161d26;
+    --bg-card-alt:#1b2430;
+    --accent:#ff3621;
+    --accent-soft:#ff6b52;
+    --blue:#1b3139;
+    --text:#eef2f5;
+    --text-dim:#9fb0bd;
+    --border:#2a3441;
+    --green:#22c55e;
+    --amber:#f5a623;
+    font-family:'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:linear-gradient(180deg,#0b0f14 0%, #10151c 100%);
+    color:var(--text);
+    line-height:1.6;
+  }
+  header.hero{
+    padding:56px 8vw 40px;
+    background:
+      radial-gradient(circle at 15% 20%, rgba(255,54,33,.18), transparent 40%),
+      radial-gradient(circle at 85% 0%, rgba(27,49,57,.6), transparent 45%),
+      #0d1117;
+    border-bottom:1px solid var(--border);
+  }
+  header.hero .tag{
+    display:inline-block;
+    background:var(--accent);
+    color:#fff;
+    font-size:.75rem;
+    font-weight:700;
+    letter-spacing:.08em;
+    text-transform:uppercase;
+    padding:5px 12px;
+    border-radius:20px;
+    margin-bottom:16px;
+  }
+  header.hero h1{
+    font-size:2.4rem;
+    margin:0 0 10px;
+    font-weight:800;
+  }
+  header.hero p.subtitle{
+    color:var(--text-dim);
+    font-size:1.05rem;
+    max-width:780px;
+    margin:0;
+  }
+  nav.tabs{
+    position:sticky;
+    top:0;
+    z-index:50;
+    display:flex;
+    flex-wrap:wrap;
+    gap:6px;
+    padding:14px 8vw;
+    background:rgba(13,17,23,.95);
+    backdrop-filter:blur(6px);
+    border-bottom:1px solid var(--border);
+  }
+  nav.tabs button{
+    background:transparent;
+    border:1px solid var(--border);
+    color:var(--text-dim);
+    padding:8px 16px;
+    border-radius:8px;
+    cursor:pointer;
+    font-size:.85rem;
+    font-weight:600;
+    transition:.2s;
+    white-space:nowrap;
+  }
+  nav.tabs button:hover{ color:var(--text); border-color:var(--accent-soft); }
+  nav.tabs button.active{
+    background:var(--accent);
+    color:#fff;
+    border-color:var(--accent);
+  }
+  main{ padding:36px 8vw 80px; max-width:1200px; margin:0 auto; }
+  section.panel{ display:none; animation:fade .35s ease; }
+  section.panel.active{ display:block; }
+  @keyframes fade{ from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:translateY(0);} }
+
+  h2.section-title{
+    font-size:1.5rem;
+    margin:0 0 6px;
+    display:flex;
+    align-items:center;
+    gap:10px;
+  }
+  h2.section-title .num{
+    background:var(--accent);
+    color:#fff;
+    font-size:.85rem;
+    width:30px; height:30px;
+    border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    flex-shrink:0;
+  }
+  p.lead{ color:var(--text-dim); margin-top:4px; margin-bottom:24px; max-width:820px; }
+
+  .card{
+    background:var(--bg-card);
+    border:1px solid var(--border);
+    border-radius:12px;
+    padding:22px 24px;
+    margin-bottom:20px;
+  }
+  .card h3{ margin-top:0; font-size:1.1rem; color:var(--accent-soft); }
+  .grid2{ display:grid; grid-template-columns:1fr 1fr; gap:20px; }
+  .grid3{ display:grid; grid-template-columns:repeat(3,1fr); gap:16px; }
+  @media(max-width:900px){ .grid2, .grid3{ grid-template-columns:1fr; } }
+
+  table{ width:100%; border-collapse:collapse; margin:14px 0; font-size:.88rem; }
+  th, td{ border:1px solid var(--border); padding:9px 12px; text-align:left; }
+  th{ background:var(--bg-card-alt); color:var(--accent-soft); font-weight:700; }
+  tr:nth-child(even){ background:rgba(255,255,255,.02); }
+
+  code, pre{
+    font-family:'Cascadia Code','Fira Code',Consolas,monospace;
+  }
+  pre{
+    background:#0a0d11;
+    border:1px solid var(--border);
+    border-left:3px solid var(--accent);
+    padding:16px 18px;
+    border-radius:8px;
+    overflow-x:auto;
+    font-size:.82rem;
+    color:#d7e3ea;
+  }
+  code.inline{
+    background:#1e2733;
+    padding:2px 6px;
+    border-radius:4px;
+    color:var(--amber);
+    font-size:.85rem;
+  }
+  .badge{
+    display:inline-block;
+    font-size:.72rem;
+    font-weight:700;
+    padding:3px 10px;
+    border-radius:12px;
+    margin-right:6px;
+  }
+  .badge.csv{ background:#1e3a2f; color:#4ade80; }
+  .badge.json{ background:#2f2517; color:#fbbf24; }
+  .badge.bronze{ background:#3a2a1e; color:#d29b5e; }
+  .badge.silver{ background:#2a2e33; color:#c7ccd1; }
+  .badge.gold{ background:#3a3320; color:#facc15; }
+
+  ul.checklist{ list-style:none; padding-left:0; }
+  ul.checklist li{
+    padding:8px 0 8px 30px;
+    position:relative;
+    border-bottom:1px dashed var(--border);
+  }
+  ul.checklist li:last-child{ border-bottom:none; }
+  ul.checklist li::before{
+    content:"✓";
+    position:absolute;
+    left:0;
+    color:var(--green);
+    font-weight:800;
+  }
+  .diagram{
+    display:flex;
+    align-items:stretch;
+    gap:0;
+    margin:24px 0;
+    flex-wrap:wrap;
+  }
+  .stage{
+    flex:1;
+    min-width:150px;
+    padding:18px 16px;
+    border-radius:10px;
+    margin:6px;
+    text-align:center;
+    position:relative;
+  }
+  .stage.bronze{ background:linear-gradient(160deg,#4a3115,#2a1d0e); border:1px solid #7a4a1e; }
+  .stage.silver{ background:linear-gradient(160deg,#3a3f45,#22262b); border:1px solid #566069; }
+  .stage.gold{ background:linear-gradient(160deg,#4a3f10,#2a240a); border:1px solid #8a7018; }
+  .stage h4{ margin:0 0 6px; font-size:1rem; }
+  .stage p{ margin:0; font-size:.78rem; color:var(--text-dim); }
+  .arrow{ align-self:center; font-size:1.4rem; color:var(--text-dim); padding:0 4px; }
+
+  .entity-tag{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    background:var(--bg-card-alt);
+    border:1px solid var(--border);
+    border-radius:8px;
+    padding:10px 14px;
+    margin:4px 6px 4px 0;
+    font-size:.85rem;
+  }
+
+  footer{
+    padding:30px 8vw;
+    text-align:center;
+    color:var(--text-dim);
+    font-size:.8rem;
+    border-top:1px solid var(--border);
+  }
+
+  .toc-link{ cursor:pointer; text-decoration:underline; color:var(--accent-soft); }
+
+  .callout{
+    border-left:3px solid var(--amber);
+    background:rgba(245,166,35,.08);
+    padding:12px 16px;
+    border-radius:6px;
+    font-size:.88rem;
+    color:#f0d9a0;
+    margin:16px 0;
+  }
+  .callout.danger{ border-left-color:var(--accent); background:rgba(255,54,33,.08); color:#f2b3aa; }
+
+  details{
+    background:var(--bg-card-alt);
+    border:1px solid var(--border);
+    border-radius:8px;
+    padding:10px 16px;
+    margin:10px 0;
+  }
+  details summary{ cursor:pointer; font-weight:700; color:var(--accent-soft); }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <span class="tag">Curso Databricks · Proyecto Final Integrador</span>
+  <h1>Pipeline End-to-End con Spark Declarative Pipelines</h1>
+  <p class="subtitle">De datos crudos en un Volume a un modelo dimensional en Gold, orquestado con Jobs y desplegado con Databricks Asset Bundles. Este documento es tu guía oficial para el proyecto final del curso.</p>
+</header>
+
+<nav class="tabs" id="tabs">
+  <button data-tab="resumen" class="active">1. Resumen</button>
+  <button data-tab="arquitectura">2. Arquitectura</button>
+  <button data-tab="entidades">3. Entidades &amp; Diccionarios</button>
+  <button data-tab="volumen">4. Volume</button>
+  <button data-tab="capas">5. Capas y Nombres</button>
+  <button data-tab="calidad">6. Calidad de Datos</button>
+  <button data-tab="pipeline">7. Declarative Pipeline</button>
+  <button data-tab="orquestacion">8. Job &amp; Bundle</button>
+  <button data-tab="entregables">9. Entregables</button>
+</nav>
+
+<main>
+
+  <!-- ===================== 1. RESUMEN ===================== -->
+  <section class="panel active" id="resumen">
+    <h2 class="section-title"><span class="num">1</span> Resumen del Proyecto</h2>
+    <p class="lead">El proyecto final integra todo lo aprendido en el curso: ingesta incremental, arquitectura medallion, calidad de datos, modelado dimensional, orquestación y despliegue como código.</p>
+
+    <div class="card">
+      <h3>Objetivo</h3>
+      <p>Construir un pipeline de datos <strong>end-to-end</strong> que ingiera 4 entidades relacionadas de un dominio de ventas retail, las procese a través de las capas <strong>Bronze → Silver → Gold</strong>, modele la capa Gold como un <strong>esquema estrella</strong>, y exponga los resultados en un <strong>dashboard de Databricks</strong>. Todo el pipeline debe estar escrito con <strong>Spark Declarative Pipelines</strong> (Lakeflow Declarative Pipelines / ex Delta Live Tables), usando <code class="inline">STREAM</code> para la ingesta incremental, con reglas de <strong>expectations</strong> en Silver y Gold, orquestado mediante un <strong>Job</strong> y empaquetado en un <strong>Databricks Asset Bundle</strong>.</p>
+    </div>
+
+    <div class="card">
+      <h3>Checklist de requisitos obligatorios</h3>
+      <ul class="checklist">
+        <li>Pipeline end-to-end desde Bronze hasta Gold</li>
+        <li>Dashboard en Databricks construido sobre la capa Gold</li>
+        <li>Modelo dimensional tipo estrella en Gold (hechos + dimensiones)</li>
+        <li>4 entidades de datos relacionadas entre sí (2 en CSV, 2 en JSON)</li>
+        <li>3 archivos (batches) por cada entidad, simulando llegada incremental de datos</li>
+        <li>Diccionario de datos por cada entidad</li>
+        <li>Pipeline Bronze→Gold implementado 100% con Spark Declarative Pipelines</li>
+        <li>Uso de <code class="inline">STREAM</code> sobre las fuentes en el Declarative Pipeline</li>
+        <li>Expectations (reglas de calidad) en Silver y en Gold</li>
+        <li>Orquestación del pipeline mediante un Job de Databricks</li>
+        <li>Proyecto empaquetado como Databricks Asset Bundle (DAB)</li>
+        <li>Datos crudos almacenados en un Volume con estructura <code class="inline">/Volumes/&lt;catalogo&gt;/&lt;esquema&gt;/&lt;volumen&gt;/{nombre_proyecto}/{entidad}</code></li>
+        <li>Catálogo, esquema y tabla documentados para cada capa</li>
+        <li>Archivo de "setup" que permita crear el Volume, el catálogo y los esquemas del proyecto</li>
+        <li>Proyecto alojado en GitHub, con el enlace del repositorio incluido en la entrega</li>
+        <li>Presentación con evidencia del desarrollo: imagen del pipeline desplegado y funcionando, e imagen del dashboard</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ===================== 2. ARQUITECTURA ===================== -->
+  <section class="panel" id="arquitectura">
+    <h2 class="section-title"><span class="num">2</span> Arquitectura General</h2>
+    <p class="lead">Arquitectura medallion clásica, con ingesta streaming desde archivos en un Volume, y un modelo dimensional al final.</p>
+
+    <div class="diagram">
+      <div class="stage bronze">
+        <h4>🥉 Bronze</h4>
+        <p>Ingesta cruda vía STREAM desde el Volume. Sin transformación, solo metadata de ingesta.</p>
+        <p><span class="badge bronze">STREAMING TABLE</span></p>
+      </div>
+      <div class="arrow">→</div>
+      <div class="stage silver">
+        <h4>🥈 Silver</h4>
+        <p>Limpieza, tipado, deduplicación y expectations. Datos conformados y confiables.</p>
+        <p><span class="badge silver">STREAMING TABLE</span></p>
+      </div>
+      <div class="arrow">→</div>
+      <div class="stage gold">
+        <h4>🥇 Gold</h4>
+        <p>Modelo dimensional en estrella: tabla de hechos + dimensiones, listo para BI.</p>
+        <p><span class="badge gold">MATERIALIZED VIEW</span></p>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Tipo de tabla por capa</h3>
+      <table>
+        <tr><th>Capa</th><th>Tipo de tabla</th></tr>
+        <tr><td><span class="badge bronze">BRONZE</span></td><td><code class="inline">STREAMING TABLE</code> (STREAM)</td></tr>
+        <tr><td><span class="badge silver">SILVER</span></td><td><code class="inline">STREAMING TABLE</code> (STREAM)</td></tr>
+        <tr><td><span class="badge gold">GOLD</span></td><td><code class="inline">MATERIALIZED VIEW</code></td></tr>
+      </table>
+    </div>
+
+    <div class="card">
+      <h3>Flujo completo</h3>
+      <p>1️⃣ Los archivos CSV/JSON de cada entidad se depositan en el <strong>Volume</strong>. 2️⃣ El <strong>Declarative Pipeline</strong> los lee incrementalmente con <code class="inline">STREAM</code> hacia Bronze, creando <code class="inline">STREAMING TABLE</code>. 3️⃣ Se transforman y validan hacia Silver aplicando <strong>expectations</strong>, también como <code class="inline">STREAMING TABLE</code>. 4️⃣ Se modelan hacia Gold como dimensiones y hechos usando <code class="inline">MATERIALIZED VIEW</code>, también con expectations. 5️⃣ Un <strong>Dashboard de Databricks</strong> consume directamente las tablas Gold. 6️⃣ Todo se orquesta con un <strong>Job</strong> y se despliega con un <strong>Asset Bundle</strong>.</p>
+    </div>
+  </section>
+
+  <!-- ===================== 3. ENTIDADES ===================== -->
+  <section class="panel" id="entidades">
+    <h2 class="section-title"><span class="num">3</span> Entidades de Datos y Diccionarios</h2>
+    <p class="lead">4 entidades relacionadas entre sí. Cada una llega en <strong>3 archivos (batches)</strong> que simulan la llegada incremental de datos al Volume — ideal para demostrar el uso de <code class="inline">STREAM</code>.</p>
+
+    <div>
+      <span class="entity-tag">👤 <strong>clientes</strong> <span class="badge csv">CSV</span></span>
+      <span class="entity-tag">📦 <strong>productos</strong> <span class="badge csv">CSV</span></span>
+      <span class="entity-tag">🧾 <strong>pedidos</strong> <span class="badge json">JSON</span></span>
+      <span class="entity-tag">🧩 <strong>detalle_pedidos</strong> <span class="badge json">JSON</span></span>
+    </div>
+
+    <div class="callout">
+      Relación entre entidades: <code class="inline">pedidos.customer_id → clientes.customer_id</code> · <code class="inline">detalle_pedidos.order_id → pedidos.order_id</code> · <code class="inline">detalle_pedidos.product_id → productos.product_id</code>
+    </div>
+
+    <!-- CLIENTES -->
+    <div class="card">
+      <h3>1. clientes <span class="badge csv">CSV</span></h3>
+      <p>Entidad maestra con la información de los clientes de la tienda. Archivos: <code class="inline">clientes_batch_1.csv</code>, <code class="inline">clientes_batch_2.csv</code>, <code class="inline">clientes_batch_3.csv</code>.</p>
+      <table>
+        <tr><th>Campo</th><th>Tipo</th><th>Descripción</th><th>Ejemplo</th></tr>
+        <tr><td>customer_id</td><td>Integer</td><td>Identificador único del cliente (PK)</td><td>1001</td></tr>
+        <tr><td>nombre</td><td>String</td><td>Nombre del cliente</td><td>Maria</td></tr>
+        <tr><td>apellido</td><td>String</td><td>Apellido del cliente</td><td>Gonzalez</td></tr>
+        <tr><td>email</td><td>String</td><td>Correo electrónico de contacto</td><td>maria.gonzalez@mail.com</td></tr>
+        <tr><td>ciudad</td><td>String</td><td>Ciudad de residencia</td><td>Lima</td></tr>
+        <tr><td>pais</td><td>String</td><td>País de residencia</td><td>Peru</td></tr>
+        <tr><td>fecha_registro</td><td>Date</td><td>Fecha de alta del cliente (yyyy-MM-dd)</td><td>2024-01-15</td></tr>
+        <tr><td>segmento</td><td>String</td><td>Segmento comercial: Retail o Premium</td><td>Premium</td></tr>
+      </table>
+    </div>
+
+    <!-- PRODUCTOS -->
+    <div class="card">
+      <h3>2. productos <span class="badge csv">CSV</span></h3>
+      <p>Catálogo de productos vendidos. Archivos: <code class="inline">productos_batch_1.csv</code>, <code class="inline">productos_batch_2.csv</code>, <code class="inline">productos_batch_3.csv</code>.</p>
+      <table>
+        <tr><th>Campo</th><th>Tipo</th><th>Descripción</th><th>Ejemplo</th></tr>
+        <tr><td>product_id</td><td>Integer</td><td>Identificador único del producto (PK)</td><td>2001</td></tr>
+        <tr><td>nombre_producto</td><td>String</td><td>Nombre comercial del producto</td><td>Laptop Pro 14</td></tr>
+        <tr><td>categoria</td><td>String</td><td>Categoría del producto</td><td>Tecnologia</td></tr>
+        <tr><td>subcategoria</td><td>String</td><td>Subcategoría del producto</td><td>Computadoras</td></tr>
+        <tr><td>precio_unitario</td><td>Decimal</td><td>Precio unitario de lista</td><td>3200.00</td></tr>
+        <tr><td>proveedor</td><td>String</td><td>Proveedor del producto</td><td>TechSupply SA</td></tr>
+        <tr><td>stock_actual</td><td>Integer</td><td>Unidades disponibles en inventario</td><td>45</td></tr>
+      </table>
+    </div>
+
+    <!-- PEDIDOS -->
+    <div class="card">
+      <h3>3. pedidos <span class="badge json">JSON</span></h3>
+      <p>Cabecera de cada pedido realizado. Archivos: <code class="inline">pedidos_batch_1.json</code>, <code class="inline">pedidos_batch_2.json</code>, <code class="inline">pedidos_batch_3.json</code>.</p>
+      <table>
+        <tr><th>Campo</th><th>Tipo</th><th>Descripción</th><th>Ejemplo</th></tr>
+        <tr><td>order_id</td><td>Integer</td><td>Identificador único del pedido (PK)</td><td>5001</td></tr>
+        <tr><td>customer_id</td><td>Integer</td><td>FK hacia clientes.customer_id</td><td>1001</td></tr>
+        <tr><td>fecha_pedido</td><td>Date</td><td>Fecha en la que se realizó el pedido</td><td>2024-01-16</td></tr>
+        <tr><td>canal_venta</td><td>String</td><td>Canal por el que se generó el pedido</td><td>web</td></tr>
+        <tr><td>estado_pedido</td><td>String</td><td>Estado: completado, en_proceso, cancelado</td><td>completado</td></tr>
+        <tr><td>total_pedido</td><td>Decimal</td><td>Monto total del pedido</td><td>3245.50</td></tr>
+      </table>
+    </div>
+
+    <!-- DETALLE PEDIDOS -->
+    <div class="card">
+      <h3>4. detalle_pedidos <span class="badge json">JSON</span></h3>
+      <p>Detalle línea a línea de cada pedido (grano de la futura tabla de hechos). Archivos: <code class="inline">detalle_pedidos_batch_1.json</code>, <code class="inline">detalle_pedidos_batch_2.json</code>, <code class="inline">detalle_pedidos_batch_3.json</code>.</p>
+      <table>
+        <tr><th>Campo</th><th>Tipo</th><th>Descripción</th><th>Ejemplo</th></tr>
+        <tr><td>order_item_id</td><td>Integer</td><td>Identificador único de la línea (PK)</td><td>9001</td></tr>
+        <tr><td>order_id</td><td>Integer</td><td>FK hacia pedidos.order_id</td><td>5001</td></tr>
+        <tr><td>product_id</td><td>Integer</td><td>FK hacia productos.product_id</td><td>2001</td></tr>
+        <tr><td>cantidad</td><td>Integer</td><td>Unidades compradas de ese producto</td><td>1</td></tr>
+        <tr><td>precio_unitario</td><td>Decimal</td><td>Precio unitario aplicado en la venta</td><td>3200.00</td></tr>
+        <tr><td>descuento</td><td>Decimal</td><td>Porcentaje de descuento aplicado (0 a 1)</td><td>0.05</td></tr>
+      </table>
+    </div>
+  </section>
+
+  <!-- ===================== 4. VOLUME ===================== -->
+  <section class="panel" id="volumen">
+    <h2 class="section-title"><span class="num">4</span> Estructura del Volume</h2>
+    <p class="lead">Todos los archivos crudos (los 12 archivos: 4 entidades x 3 batches) se depositan en un <strong>Volume de Databricks</strong>, respetando esta estructura obligatoria.</p>
+
+    <pre>/Volumes/&lt;catalogo&gt;/&lt;esquema_landing&gt;/&lt;nombre_volume&gt;/{nombre_proyecto}/clientes/
+    clientes_batch_1.csv
+    clientes_batch_2.csv
+    clientes_batch_3.csv
+
+/Volumes/&lt;catalogo&gt;/&lt;esquema_landing&gt;/&lt;nombre_volume&gt;/{nombre_proyecto}/productos/
+    productos_batch_1.csv
+    productos_batch_2.csv
+    productos_batch_3.csv
+
+/Volumes/&lt;catalogo&gt;/&lt;esquema_landing&gt;/&lt;nombre_volume&gt;/{nombre_proyecto}/pedidos/
+    pedidos_batch_1.json
+    pedidos_batch_2.json
+    pedidos_batch_3.json
+
+/Volumes/&lt;catalogo&gt;/&lt;esquema_landing&gt;/&lt;nombre_volume&gt;/{nombre_proyecto}/detalle_pedidos/
+    detalle_pedidos_batch_1.json
+    detalle_pedidos_batch_2.json
+    detalle_pedidos_batch_3.json</pre>
+
+    <div class="callout">
+      Reemplaza <code class="inline">{nombre_proyecto}</code> por el nombre de tu proyecto (ej: <code class="inline">ventas_retail_juanperez</code>). Cada alumno debe usar un nombre de proyecto único para no chocar con otros compañeros dentro del mismo catálogo/esquema.
+    </div>
+
+    <div class="card">
+      <h3>Ejemplo de creación del Volume</h3>
+      <pre>CREATE VOLUME IF NOT EXISTS &lt;catalogo&gt;.&lt;esquema_landing&gt;.&lt;nombre_volume&gt;;
+
+-- Ejemplo concreto
+CREATE VOLUME IF NOT EXISTS proyecto_final.landing.raw_data;
+
+-- Ruta resultante para subir los archivos de "clientes"
+-- /Volumes/proyecto_final/landing/raw_data/ventas_retail_juanperez/clientes/</pre>
+    </div>
+  </section>
+
+  <!-- ===================== 5. CAPAS Y NOMENCLATURA ===================== -->
+  <section class="panel" id="capas">
+    <h2 class="section-title"><span class="num">5</span> Capas, Catálogo, Esquema y Tabla</h2>
+    <p class="lead">Usa un único catálogo para todo el proyecto, con un esquema por capa. Esta tabla es tu referencia exacta de nomenclatura.</p>
+
+    <div class="card">
+      <h3>Convención general</h3>
+      <table>
+        <tr><th>Concepto</th><th>Convención</th><th>Ejemplo</th></tr>
+        <tr><td>Catálogo</td><td><code class="inline">&lt;nombre_proyecto&gt;</code></td><td>proyecto_final</td></tr>
+        <tr><td>Esquema Landing (Volume)</td><td><code class="inline">landing</code></td><td>proyecto_final.landing</td></tr>
+        <tr><td>Esquema Bronze</td><td><code class="inline">bronze</code></td><td>proyecto_final.bronze</td></tr>
+        <tr><td>Esquema Silver</td><td><code class="inline">silver</code></td><td>proyecto_final.silver</td></tr>
+        <tr><td>Esquema Gold</td><td><code class="inline">gold</code></td><td>proyecto_final.gold</td></tr>
+      </table>
+    </div>
+
+    <div class="card">
+      <h3><span class="badge bronze">BRONZE</span> Tablas crudas (streaming raw ingest)</h3>
+      <table>
+        <tr><th>Entidad origen</th><th>Catálogo</th><th>Esquema</th><th>Tabla</th></tr>
+        <tr><td>clientes</td><td>proyecto_final</td><td>bronze</td><td>clientes_raw</td></tr>
+        <tr><td>productos</td><td>proyecto_final</td><td>bronze</td><td>productos_raw</td></tr>
+        <tr><td>pedidos</td><td>proyecto_final</td><td>bronze</td><td>pedidos_raw</td></tr>
+        <tr><td>detalle_pedidos</td><td>proyecto_final</td><td>bronze</td><td>detalle_pedidos_raw</td></tr>
+      </table>
+    </div>
+
+    <div class="card">
+      <h3><span class="badge silver">SILVER</span> Tablas limpias y conformadas</h3>
+      <table>
+        <tr><th>Entidad</th><th>Catálogo</th><th>Esquema</th><th>Tabla</th></tr>
+        <tr><td>clientes</td><td>proyecto_final</td><td>silver</td><td>clientes</td></tr>
+        <tr><td>productos</td><td>proyecto_final</td><td>silver</td><td>productos</td></tr>
+        <tr><td>pedidos</td><td>proyecto_final</td><td>silver</td><td>pedidos</td></tr>
+        <tr><td>detalle_pedidos</td><td>proyecto_final</td><td>silver</td><td>detalle_pedidos</td></tr>
+      </table>
+    </div>
+
+    <div class="card">
+      <h3><span class="badge gold">GOLD</span> Modelo dimensional (esquema estrella)</h3>
+      <table>
+        <tr><th>Rol</th><th>Catálogo</th><th>Esquema</th><th>Tabla</th><th>Grano</th></tr>
+        <tr><td>Dimensión</td><td>proyecto_final</td><td>gold</td><td>dim_cliente</td><td>1 fila por cliente</td></tr>
+        <tr><td>Dimensión</td><td>proyecto_final</td><td>gold</td><td>dim_producto</td><td>1 fila por producto</td></tr>
+        <tr><td>Dimensión</td><td>proyecto_final</td><td>gold</td><td>dim_fecha</td><td>1 fila por día</td></tr>
+        <tr><td>Hechos</td><td>proyecto_final</td><td>gold</td><td>fact_ventas</td><td>1 fila por línea de detalle de pedido</td></tr>
+      </table>
+    </div>
+
+    <div class="card">
+      <h3>Modelo estrella resultante</h3>
+      <pre>              dim_cliente
+                   |
+dim_producto — fact_ventas — dim_fecha</pre>
+      <p><code class="inline">fact_ventas</code> contiene las llaves foráneas <code class="inline">customer_key</code>, <code class="inline">product_key</code>, <code class="inline">date_key</code> junto con las métricas: <code class="inline">cantidad</code>, <code class="inline">precio_unitario</code>, <code class="inline">descuento</code> y <code class="inline">monto_total</code>.</p>
+    </div>
+  </section>
+
+  <!-- ===================== 6. CALIDAD ===================== -->
+  <section class="panel" id="calidad">
+    <h2 class="section-title"><span class="num">6</span> Calidad de Datos con Expectations</h2>
+    <p class="lead">Debes definir <strong>expectations</strong> tanto en Silver como en Gold para cada entidad. No se exige un ejemplo de código: aquí se indica de manera funcional qué debe validar cada regla. Usa al menos una regla por severidad a lo largo del proyecto: <code class="inline">warn</code>, <code class="inline">drop</code> y <code class="inline">fail</code>.</p>
+
+    <div class="card">
+      <h3><span class="badge csv">CSV</span> clientes</h3>
+      <ul class="checklist">
+        <li>El identificador <code class="inline">customer_id</code> no debe ser nulo (clave primaria de la entidad)</li>
+        <li>El campo <code class="inline">email</code> debe tener un formato de correo válido</li>
+        <li>El campo <code class="inline">segmento</code> debe pertenecer a una lista de valores permitidos (Retail, Premium)</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h3><span class="badge csv">CSV</span> productos</h3>
+      <ul class="checklist">
+        <li>El identificador <code class="inline">product_id</code> no debe ser nulo (clave primaria de la entidad)</li>
+        <li>El campo <code class="inline">precio_unitario</code> debe ser mayor a cero</li>
+        <li>El campo <code class="inline">stock_actual</code> no debe ser negativo</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h3><span class="badge json">JSON</span> pedidos</h3>
+      <ul class="checklist">
+        <li>El identificador <code class="inline">order_id</code> no debe ser nulo (clave primaria de la entidad)</li>
+        <li>El campo <code class="inline">estado_pedido</code> debe pertenecer a una lista de valores permitidos (completado, en_proceso, cancelado)</li>
+        <li>El campo <code class="inline">total_pedido</code> no debe ser negativo</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h3><span class="badge json">JSON</span> detalle_pedidos</h3>
+      <ul class="checklist">
+        <li>El identificador <code class="inline">order_item_id</code> no debe ser nulo (clave primaria de la entidad)</li>
+        <li>El campo <code class="inline">cantidad</code> debe ser mayor a cero</li>
+        <li>Las llaves foráneas <code class="inline">order_id</code> y <code class="inline">product_id</code> no deben ser nulas</li>
+      </ul>
+    </div>
+
+    <div class="callout">
+      En <strong>Silver</strong> las reglas deben enfocarse en la validez estructural y de formato de cada campo. En <strong>Gold</strong> las reglas deben enfocarse en la integridad del modelo dimensional: que las métricas de <code class="inline">fact_ventas</code> sean coherentes (por ejemplo, montos y cantidades no negativos) y que las llaves foráneas hacia las dimensiones estén siempre presentes.
+    </div>
+  </section>
+
+  <!-- ===================== 7. DECLARATIVE PIPELINE ===================== -->
+  <section class="panel" id="pipeline">
+    <h2 class="section-title"><span class="num">7</span> Spark Declarative Pipelines con STREAM</h2>
+    <p class="lead">Todo el flujo Bronze → Silver → Gold debe implementarse obligatoriamente con <strong>Spark Declarative Pipelines</strong> (motor de Lakeflow Declarative Pipelines). No se provee código de ejemplo en este documento; el diseño e implementación del pipeline queda a cargo del alumno.</p>
+
+    <div class="card">
+      <h3>Requisito obligatorio</h3>
+      <ul class="checklist">
+        <li>El pipeline completo (Bronze, Silver y Gold) debe estar construido con Spark Declarative Pipelines</li>
+        <li>La ingesta desde el Volume hacia Bronze debe usar <code class="inline">STREAM</code> para procesamiento incremental</li>
+        <li>Los flujos entre capas que correspondan a tablas de streaming (Bronze y Silver) deben usar también <code class="inline">STREAM</code></li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h3>Tipo de tabla por capa</h3>
+      <table>
+        <tr><th>Capa</th><th>Tipo de tabla</th></tr>
+        <tr><td><span class="badge bronze">BRONZE</span></td><td><code class="inline">STREAMING TABLE</code> (STREAM)</td></tr>
+        <tr><td><span class="badge silver">SILVER</span></td><td><code class="inline">STREAMING TABLE</code> (STREAM)</td></tr>
+        <tr><td><span class="badge gold">GOLD</span></td><td><code class="inline">MATERIALIZED VIEW</code></td></tr>
+      </table>
+      <div class="callout">
+        Las tablas creadas en <strong>Bronze</strong> y <strong>Silver</strong> deben ser de tipo <code class="inline">STREAM</code> (streaming tables), mientras que las tablas de la capa <strong>Gold</strong> (dimensiones y tabla de hechos del modelo estrella) deben crearse como <code class="inline">MATERIALIZED VIEW</code>.
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== 8. ORQUESTACION ===================== -->
+  <section class="panel" id="orquestacion">
+    <h2 class="section-title"><span class="num">8</span> Orquestación con Job y Databricks Asset Bundle</h2>
+    <p class="lead">El Declarative Pipeline se dispara desde un <strong>Job</strong>, y todo el proyecto se empaqueta y despliega usando un <strong>Databricks Asset Bundle (DAB)</strong>.</p>
+
+    <div class="card">
+      <h3>Estructura del Bundle</h3>
+      <pre>mi_proyecto_final/
+├── databricks.yml
+├── resources/
+│   ├── pipeline.yml        # Definición del Declarative Pipeline
+│   └── job.yml             # Job que orquesta el pipeline
+├── src/
+│   └── transformations/
+│       ├── 01_bronze.py
+│       ├── 02_silver.py
+│       └── 03_gold.py
+└── dashboard/
+    └── dashboard_gold.lvdash.json</pre>
+      <p>La carpeta <code class="inline">dashboard/</code> debe contener el archivo del dashboard exportado en formato <code class="inline">.lvdash.json</code>, correspondiente al dashboard de Databricks construido sobre la capa Gold.</p>
+    </div>
+  </section>
+
+  <!-- ===================== 9. ENTREGABLES ===================== -->
+  <section class="panel" id="entregables">
+    <h2 class="section-title"><span class="num">9</span> Entregables Finales</h2>
+    <p class="lead">El entregable final del proyecto consta de 5 elementos.</p>
+
+    <div class="grid3">
+      <div class="card">
+        <h3>📁 Código</h3>
+        <p>Código fuente del pipeline Bronze-Silver-Gold, incluyendo definiciones de expectations.</p>
+      </div>
+      <div class="card">
+        <h3>📊 Dashboard</h3>
+        <p>Dashboard de Databricks construido sobre las tablas Gold, con al menos 4 visualizaciones distintas.</p>
+      </div>
+      <div class="card">
+        <h3>📦 Bundle</h3>
+        <p>Proyecto empaquetado como Databricks Asset Bundle, desplegado mediante <code class="inline">databricks bundle deploy</code>.</p>
+      </div>
+      <div class="card">
+        <h3>🛠️ Archivo de setup</h3>
+        <p>Script o notebook de <strong>setup</strong> que cree el Volume, el catálogo y los esquemas (landing, bronze, silver, gold) del proyecto antes de ejecutar el pipeline.</p>
+      </div>
+      <div class="card">
+        <h3>🔗 Enlace a GitHub</h3>
+        <p>Enlace al repositorio de GitHub donde está alojado el proyecto completo (código, bundle y setup).</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>🎤 Presentación con evidencia (adicional al código en GitHub)</h3>
+      <p>Junto con el código publicado en GitHub, se debe enviar una <strong>presentación</strong> que muestre la evidencia de lo desarrollado. Como mínimo debe contemplar:</p>
+      <ul class="checklist">
+        <li>Imagen del pipeline desplegado y en ejecución (Spark Declarative Pipeline funcionando en Databricks)</li>
+        <li>Imagen del dashboard construido sobre la capa Gold</li>
+      </ul>
+    </div>
+
+    <div class="callout danger">
+      Recuerda: el incumplimiento de cualquiera de los requisitos base afecta la calificación del proyecto. Revisa la pestaña "Resumen" antes de la entrega final.
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  Curso de Databricks · Proyecto Final Integrador · Genera preguntas en el canal del curso si tienes dudas sobre algún requisito.
+</footer>
+
+<script>
+  const buttons = document.querySelectorAll('nav.tabs button');
+  const panels = document.querySelectorAll('section.panel');
+
+  buttons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      buttons.forEach(b => b.classList.remove('active'));
+      panels.forEach(p => p.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById(btn.dataset.tab).classList.add('active');
+      window.scrollTo({top:0, behavior:'smooth'});
+    });
+  });
+</script>
+
+</body>
+</html>

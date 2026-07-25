@@ -1,0 +1,15 @@
+# Databricks Asset Bundle - Proyecto Final Ventas Retail
+# Despliegue:  databricks bundle deploy -t dev
+# Ejecución:   databricks bundle run job_ventas_retail -t dev
+bundle:
+  name: ventas_retail_luisazana
+
+include:
+  - resources/*.yml
+
+targets:
+  dev:
+    mode: development
+    default: true
+    workspace:
+      host: https://dbc-5b44ba3c-83df.cloud.databricks.com
